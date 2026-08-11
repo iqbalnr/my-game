@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ninja Maze Quiz - Harta Karun Bahasa Indonesia</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            background-color: #1a1a24;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background: #2b2b36;
+            border: 4px solid #e74c3c;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(20, 20, 28, 0.95);
+            z-index: 10;
+        }
+        .hidden { display: none !important; }
+
+        h1 { font-size: 2.5rem; color: #f1c40f; margin-bottom: 20px; text-shadow: 2px 2px #c0392b; }
+        h2 { font-size: 1.8rem; color: #e74c3c; margin-bottom: 15px; }
+        
+        .btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #c0392b; transform: scale(1.05); }
+        
+        .selection-group {
+            margin: 15px 0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .avatar-option {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #7f8c8d;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        .avatar-option.selected { border-color: #2ecc71; transform: scale(1.1); }
+        select {
+            padding: 8px;
+            font-size: 1rem;
+            border-radius: 5px;
+            background: #34495e;
+            color: white;
+            border: 1px solid #7f8c8d;
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.4);
+            z-index: 5;
+            font-weight: bold;
+        }
+        .stat-box { display: flex; gap: 15px; }
+
+        canvas { display: block; }
+
+        #quiz-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 500px;
+            background: #2c3e50;
+            border: 3px solid #f1c40f;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 20;
+            text-align: center;
+        }
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .quiz-btn {
+            background: #34495e;
+            color: white;
+            border: 1px solid #bdc3c7;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+        }
+        .quiz-btn:hover { background: #2980b9; }
+
+        #mobile-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 5px;
+            z-index: 5;
+        }
+        .dpad-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid #fff;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="hud" class="hidden">
+        <div class="stat-box">
+            <span id="hud-hp">HP: 100</span>
+        </div>
+        <div id="hud-info">Cari Petunjuk Harta Karun!</div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div id="screen-lobby" class="screen">
+        <h1>NINJA MAZE QUIZ</h1>
+        
+        <div class="selection-group">
+            <label>Pilih Hero:</label>
+            <div id="hero-red" class="avatar-option selected" style="background:#e74c3c;">Aka</div>
+            <div id="hero-blue" class="avatar-option" style="background:#3498db;">Aoi</div>
+        </div>
+
+        <div class="selection-group">
+            <label>Stage:</label>
+            <select id="select-stage">
+                <option value="1">Stage 1 - Hutan</option>
+                <option value="2">Stage 2 - Candi</option>
+                <option value="3">Stage 3 - Istana</option>
+            </select>
+            <label>Level:</label>
+            <select id="select-level">
+                <option value="1">Level 1</option>
+                <option value="2">Level 2</option>
+                <option value="3">Level 3</option>
+            </select>
+        </div>
+
+        <div>
+            <button id="btn-start" class="btn">Mulai Game</button>
+            <button id="btn-guide" class="btn" style="background:#7f8c8d">Petunjuk</button>
+        </div>
+    </div>
+
+    <div id="screen-guide" class="screen hidden">
+        <h2>Cara Bermain</h2>
+        <ul style="text-align: left; max-width: 80%; line-height: 1.6; margin-bottom: 20px;">
+            <li>Gunakan tombol <b>Panah (Arrow) / WASD</b> untuk bergerak.</li>
+            <li>Hindari <b>Musuh Patroli (Lingkaran Merah)</b>.</li>
+            <li>Hampiri <b>Peti (Kuning)</b> untuk Kuis Bahasa Indonesia.</li>
+            <li><b>Jawab BENAR:</b> HP bertambah & lokasi Harta Karun terbuka!</li>
+            <li><b>Jawab SALAH:</b> Labirin akan di-reset otomatis!</li>
+            <li>Capai <b>Harta Karun (Hijau)</b> untuk MENANG!</li>
+        </ul>
+        <button id="btn-back-guide" class="btn">Kembali</button>
+    </div>
+
+    <div id="quiz-modal" class="hidden">
+        <h3 style="color:#f1c40f; margin-bottom:10px;">Kuis Bahasa Indonesia</h3>
+        <p id="quiz-question">Pertanyaan kuis...</p>
+        <div class="quiz-options" id="quiz-options"></div>
+    </div>
+
+    <div id="screen-end" class="screen hidden">
+        <h1 id="end-title">Game Over</h1>
+        <p id="end-message" style="margin-bottom: 20px;"></p>
+        <button id="btn-restart" class="btn">Kembali ke Lobby</button>
+    </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const questionsBank = [
+        { q: "Manakah yang merupakan kata baku?", options: ["Aktivitas", "Aktifitas", "Aktipitas"], answer: 0 },
+        { q: "Sinonim dari kata 'Eksplorasi' adalah...", options: ["Penjelajahan", "Penelitian", "Pencegahan"], answer: 0 },
+        { q: "Antonim dari kata 'Akurat' adalah...", options: ["Tepat", "Meleset", "Fakta"], answer: 1 },
+        { q: "Gagasan utama dalam sebuah paragraf disebut...", options: ["Ide Pokok", "Kalimat Penjelas", "Judul"], answer: 0 },
+        { q: "Puisi lama yang bersajak a-b-a-b disebut...", options: ["Gurindam", "Pantun", "Syair"], answer: 1 }
+    ];
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const COLS = 16;
+    const ROWS = 12;
+    const TILE_SIZE = 50;
+
+    let heroColor = 'red';
+    let gameState = 'LOBBY'; 
+    let map = [];
+    let player = { x: 1, y: 1, hp: 100, maxHp: 100 };
+    let enemies = [];
+    let clues = [];
+    let treasure = { x: -1, y: -1, visible: false };
+    let activeClueIndex = -1;
+    let animId = null;
+
+    function generateMaze() {
+        map = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1],
+            [1,0,1,0,1,0,1,1,1,0,1,0,1,1,0,1],
+            [1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,1],
+            [1,0,1,1,1,1,1,0,1,1,1,0,1,0,1,1],
+            [1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
+            [1,1,1,1,1,0,1,1,1,0,1,1,1,1,0,1],
+            [1,0,0,0,1,0,0,0,1,0,0,0,0,1,0,1],
+            [1,0,1,0,1,1,1,0,1,1,1,1,0,1,0,1],
+            [1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1],
+            [1,0,1,1,1,1,1,1,1,1,0,0,0,1,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        player.x = 1;
+        player.y = 1;
+
+        enemies = [
+            { x: 5, y: 1, dir: 1, axis: 'x' },
+            { x: 11, y: 5, dir: 1, axis: 'y' },
+            { x: 3, y: 9, dir: -1, axis: 'x' }
+        ];
+
+        clues = [
+            { x: 7, y: 3, collected: false },
+            { x: 14, y: 9, collected: false }
+        ];
+
+        treasure = { x: 14, y: 1, visible: false };
+    }
+
+    function movePlayer(dx, dy) {
+        if (gameState !== 'PLAYING') return;
+        let newX = player.x + dx;
+        let newY = player.y + dy;
+
+        if (map[newY] && map[newY][newX] === 0) {
+            player.x = newX;
+            player.y = newY;
+            checkCollisions();
+        }
+    }
+
+    window.addEventListener('keydown', e => {
+        if (e.key === 'ArrowUp' || e.key === 'w') movePlayer(0, -1);
+        if (e.key === 'ArrowDown' || e.key === 's') movePlayer(0, 1);
+        if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer(-1, 0);
+        if (e.key === 'ArrowRight' || e.key === 'd') movePlayer(1, 0);
+    });
+
+    document.getElementById('hero-red').onclick = () => {
+        heroColor = 'red';
+        document.getElementById('hero-red').classList.add('selected');
+        document.getElementById('hero-blue').classList.remove('selected');
+    };
+
+    document.getElementById('hero-blue').onclick = () => {
+        heroColor = 'blue';
+        document.getElementById('hero-blue').classList.add('selected');
+        document.getElementById('hero-red').classList.remove('selected');
+    };
+
+    document.getElementById('btn-guide').onclick = () => {
+        document.getElementById('screen-guide').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-back-guide').onclick = () => {
+        document.getElementById('screen-guide').classList.add('hidden');
+    };
+
+    document.getElementById('btn-start').onclick = () => {
+        document.getElementById('screen-lobby').classList.add('hidden');
+        document.getElementById('hud').classList.remove('hidden');
+        player.hp = 100;
+        updateHUD();
+        generateMaze();
+        gameState = 'PLAYING';
+        if (animId) cancelAnimationFrame(animId);
+        gameLoop();
+    };
+
+    document.getElementById('btn-restart').onclick = () => {
+        document.getElementById('screen-end').classList.add('hidden');
+        document.getElementById('screen-lobby').classList.remove('hidden');
+        document.getElementById('hud').classList.add('hidden');
+        gameState = 'LOBBY';
+        render();
+    };
+
+    function updateEnemies() {
+        enemies.forEach(enemy => {
+            if (Math.random() < 0.03) {
+                let nextX = enemy.x + (enemy.axis === 'x' ? enemy.dir : 0);
+                let nextY = enemy.y + (enemy.axis === 'y' ? enemy.dir : 0);
+
+                if (map[nextY] && map[nextY][nextX] === 0) {
+                    enemy.x = nextX;
+                    enemy.y = nextY;
+                } else {
+                    enemy.dir *= -1;
+                }
+            }
+
+            if (enemy.x === player.x && enemy.y === player.y) {
+                player.hp -= 10;
+                updateHUD();
+                if (player.hp <= 0) gameOver(false);
+            }
+        });
+    }
+
+    function checkCollisions() {
+        clues.forEach((clue, idx) => {
+            if (!clue.collected && clue.x === player.x && clue.y === player.y) {
+                activeClueIndex = idx;
+                triggerQuiz();
+            }
+        });
+
+        if (treasure.visible && player.x === treasure.x && player.y === treasure.y) {
+            gameOver(true);
+        }
+    }
+
+    function triggerQuiz() {
+        gameState = 'QUIZ';
+        const modal = document.getElementById('quiz-modal');
+        const qData = questionsBank[Math.floor(Math.random() * questionsBank.length)];
+        
+        document.getElementById('quiz-question').innerText = qData.q;
+        const optsContainer = document.getElementById('quiz-options');
+        optsContainer.innerHTML = '';
+
+        qData.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'quiz-btn';
+            btn.innerText = opt;
+            btn.onclick = () => answerQuiz(idx === qData.answer);
+            optsContainer.appendChild(btn);
+        });
+
+        modal.classList.remove('hidden');
+    }
+
+    function answerQuiz(isCorrect) {
+        document.getElementById('quiz-modal').classList.add('hidden');
+        
+        if (isCorrect) {
+            alert("Jawaban BENAR! HP bertambah & Petunjuk terbuka.");
+            player.hp = Math.min(player.maxHp, player.hp + 20);
+            clues[activeClueIndex].collected = true;
+            treasure.visible = true;
+            updateHUD();
+            gameState = 'PLAYING';
+            gameLoop();
+        } else {
+            alert("Jawaban SALAH! Labirin berubah bentuk!");
+            generateMaze();
+            gameState = 'PLAYING';
+            gameLoop();
+        }
+    }
+
+    function updateHUD() {
+        document.getElementById('hud-hp').innerText = `HP: ${player.hp}`;
+        document.getElementById('hud-info').innerText = treasure.visible ? 
+            "Petunjuk Ditemukan! Cari Harta Karun (Hijau)!" : "Cari Peti Petunjuk!";
+    }
+
+    function gameOver(isWin) {
+        gameState = 'END';
+        const endScreen = document.getElementById('screen-end');
+        const title = document.getElementById('end-title');
+        const msg = document.getElementById('end-message');
+
+        if (isWin) {
+            title.innerText = "MENANG!";
+            title.style.color = "#2ecc71";
+            msg.innerText = "Selamat! Ninja berhasil menemukan Harta Karun!";
+        } else {
+            title.innerText = "GAME OVER";
+            title.style.color = "#e74c3c";
+            msg.innerText = "Ninja kehabisan HP di dalam labirin!";
+        }
+        endScreen.classList.remove('hidden');
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (map.length === 0) return;
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (map[r][c] === 1) {
+                    ctx.fillStyle = '#34495e';
+                    ctx.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                } else {
+                    ctx.fillStyle = '#1e272e';
+                    ctx.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+        }
+
+        clues.forEach(clue => {
+            if (!clue.collected) {
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(clue.x * TILE_SIZE + 10, clue.y * TILE_SIZE + 10, 30, 30);
+            }
+        });
+
+        if (treasure.visible) {
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(treasure.x * TILE_SIZE + 8, treasure.y * TILE_SIZE + 8, 34, 34);
+        }
+
+        ctx.fillStyle = '#e74c3c';
+        enemies.forEach(e => {
+            ctx.beginPath();
+            ctx.arc(e.x * TILE_SIZE + 25, e.y * TILE_SIZE + 25, 15, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.fillStyle = heroColor === 'red' ? '#e74c3c' : '#3498db';
+        ctx.fillRect(player.x * TILE_SIZE + 10, player.y * TILE_SIZE + 10, 30, 30);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(player.x * TILE_SIZE + 10, player.y * TILE_SIZE + 15, 30, 6);
+    }
+
+    function gameLoop() {
+        if (gameState === 'PLAYING') {
+            updateEnemies();
+            render();
+            animId = requestAnimationFrame(gameLoop);
+        }
+    }
+
+    generateMaze();
+    render();
+});
+</script>
+</body>
+</html>
